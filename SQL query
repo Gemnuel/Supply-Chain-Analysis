@@ -1,1 +1,167 @@
+-- Create a duplicate table to perform data cleaning
+CREATE TABLE  shipment_appliances2
+LIKE shipments_appliances;
+
+-- Insert the data from original table
+INSERT INTO shipment_appliances2
+SELECT * FROM shipments_appliances;
+
+-- Check if successfully duplicated
+SELECT * FROM shipment_appliances2;
+
+-- Assign 5 id on supplier
+UPDATE shipments_appliances2
+SET supplier_id = (
+    CASE FLOOR(RAND() * 5)
+        WHEN 0 THEN 'SUP100'
+        WHEN 1 THEN 'SUP101'
+        WHEN 2 THEN 'SUP102'
+        WHEN 3 THEN 'SUP103'
+        WHEN 4 THEN 'SUP104'
+    END
+);
+
+-- assign contact number based on supplier_id
+UPDATE suppliers_appliances
+SET contact_number = CASE supplier_id
+		WHEN 'SUP100' THEN '09123456781'
+        WHEN 'SUP101' THEN '09987654321'
+        WHEN 'SUP102' THEN '09171234568'
+        WHEN 'SUP103' THEN '09081231234'
+        WHEN 'SUP104' THEN '09188887779'		
+        END; 
+	
+UPDATE suppliers_appliances
+SET supplier_name = 'ElectroHub'
+WHERE supplier_id = 'SUP100';
+
+-- Removing extra letters in row
+UPDATE inventory_appliances
+SET item_name = REGEXP_REPLACE(item_name, '(kg|cu|cu.ft|hp|L)', '');
+
+ALTER TABLE inventory_appliances
+ADD COLUMN price DECIMAL(10,2) DEFAULT 0.00;
+-- Assign prices each item
+UPDATE inventory_appliances 
+SET price = 
+    CASE 
+        WHEN item_name = 'Refrigerator' THEN 17500
+        WHEN item_name = 'Blender' THEN 1400
+        WHEN item_name = 'Electricfan' THEN 1500
+        WHEN item_name = 'LED TV' THEN 11500
+        WHEN item_name = 'Microwave' THEN 2000
+        WHEN item_name = 'Air Conditioner' THEN 18000
+        WHEN item_name = 'Vacuum Cleaner' THEN 3500
+        WHEN item_name = 'Clothes Dryer' THEN 9000
+        WHEN item_name = 'Washing Machine' THEN 12000
+        WHEN item_name = 'Dishwasher' THEN 10000
+        WHEN item_name = 'Coffee Maker' THEN 2500
+        WHEN item_name = 'Toaster' THEN 800
+        WHEN item_name = 'Juicer' THEN 2000
+        WHEN item_name = 'Rice Cooker' THEN 1500
+        WHEN item_name = 'Water Heater' THEN 4500
+        WHEN item_name = 'Food Processor' THEN 3000
+        WHEN item_name = 'Iron' THEN 1000
+        WHEN item_name = 'Mixer' THEN 1200
+        WHEN item_name = 'Fan Heater' THEN 1800
+        WHEN item_name = 'Dehumidifier' THEN 5500
+        ELSE NULL
+    END;
+    
+-- Update empty column item_name to 20 values 
+UPDATE inventory_appliances
+SET item_name = ELT(
+    FLOOR(1 + RAND()*20),  -- 1 to 20
+    'Refrigerator','Blender','Electricfan','LED TV','Microwave',
+    'Air Conditioner','Vacuum Cleaner','Clothes Dryer','Washing Machine','Dishwasher',
+    'Coffee Maker','Toaster','Juicer','Rice Cooker','Water Heater','Food Processor','Iron','Mixer','Fan Heater','Dehumidifier'
+);
+
+-- Adding a value in shipment_date column where shipments_date is NULL
+UPDATE shipments_appliances
+SET shipment_date = ELT(FLOOR(1 + RAND() * 20),
+  '2025-11-02','2025-10-12','2025-09-20','2025-02-17','2025-02-15',
+  '2025-12-22','2025-12-21','2025-05-02','2025-03-19','2025-01-02',
+  '2025-12-02','2025-08-02','2025-11-11','2025-12-12','2025-12-14',
+  '2025-12-01','2025-10-02','2025-07-25','2025-04-04','2025-09-02')
+WHERE shipment_date = '';
+
+DELETE FROM shipments_appliances
+WHERE shipment_date LIKE '2024%';
+
+UPDATE suppliers_appliances
+SET location = 'Makati' 
+WHERE location = '0';
+
+-- add column delivery_date
+ALTER TABLE shipments_appliances
+ADD delivery_date DATE;
+-- Assign value to delivery_date  column after adding the column delivery_date
+UPDATE shipments_appliances
+SET delivery_date = ELT(FLOOR(1 + RAND() * 20),
+'2025-10-15','2025-10-18','2025-09-25','2025-02-20','2025-02-28',
+'2025-12-05','2025-12-18','2025-05-10','2025-03-22','2025-01-15',
+'2025-11-28','2025-08-14','2025-11-20','2025-12-08','2025-12-22',
+'2025-12-03','2025-10-25','2025-07-30','2025-04-12','2025-09-17')
+WHERE delivery_date IS NULL;
+
+
+-- Updating the column value -- 
+UPDATE shipments_appliances
+SET delivery_date = DATE_ADD(shipment_date, INTERVAL FLOOR(3 + RAND() * 12) DAY)
+WHERE shipment_date IS NOT NULL 
+  AND shipment_date != '';
+
+UPDATE inventory_appliances
+SET category = 'Home Goods'
+WHERE category = '';
+
+UPDATE shipments_appliances
+SET status = 'Deliverd'
+WHERE status = 'ERROR' or status = '';
+
+UPDATE shipments_appliances
+SET quantity = 65
+WHERE quantity < 0 or  quantity = '';
+
+UPDATE shipments_appliances
+SET supplier_id = 'SUP601'
+WHERE supplier_id = '';
+
+UPDATE inventory_appliances
+SET stock = 5
+WHERE item_name IN('Fan Heater','Toester','Juicer','Coffe Maker');
+
+UPDATE suppliers_appliances
+SET supplier_name = 'HomeWareX'
+WHERE supplier_id = 'SUP101';
+
+UPDATE suppliers_appliances
+SET supplier_name = 'MegaSupply'
+WHERE supplier_id = 'SUP102';
+
+UPDATE suppliers_appliances
+SET supplier_name = 'SM'
+WHERE supplier_id = 'SUP103';
+
+UPDATE suppliers_appliances
+SET rating = 5
+WHERE rating = '';
+
+Describe shipments_appliances;
+-- Option 1: Alter the table to use proper DATE type
+ALTER TABLE shipments_appliances 
+MODIFY COLUMN shipment_date DATE;
+
+ALTER TABLE shipments_appliances 
+MODIFY COLUMN delivery_date DATE;
+
+-- Create a new properly formatted table
+CREATE TABLE shipments_appliances_fixed LIKE shipments_appliances;
+
+ALTER TABLE shipments_appliances_fixed 
+MODIFY COLUMN shipment_date DATE,
+MODIFY COLUMN delivery_date DATE;
+
+
 
